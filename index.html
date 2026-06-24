@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <title>Horas Extra - Parras Valley</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:#080f14;color:#f0ede8;font-family:system-ui,sans-serif;font-size:16px;}
+    select option{background:#080f14;}
+    ::-webkit-scrollbar{width:20px;}
+    ::-webkit-scrollbar-track{background:rgba(255,255,255,0.04);}
+    ::-webkit-scrollbar-thumb{background:rgba(251,191,36,0.5);border-radius:10px;border:4px solid transparent;background-clip:padding-box;}
+    @media print{
+      .no-print{display:none!important;}
+      body{background:#fff;color:#000;font-size:13px;}
+      .print-card{background:#fff!important;color:#000!important;border:1px solid #ccc!important;}
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+var useState=React.useState;
+var useEffect=React.useEffect;
+
+var FB="https://parrasvalley-default-rtdb.firebaseio.com";
+var FB_PLANT=FB+"/extras-plantilla-v1.json";
+var FB_REG=FB+"/extras-registros-v1.json";
+var PRECIO_DEFAULT=50;
+var COL="#fbbf24";
+
+var AREAS_DEFAULT=[
+  "Persa","Slicer","Morron","Minibel","Europeo",
+  "Embolsado Persa","Embolsado Minibel","Embolsado Morron",
+  "Carton","Embarques","Trazabilidad","Calidad","Mantenimiento",
+  "Reciba","Descarga Fruta","Descarga Materiales"
+];
+
+var PLANTILLA_INICIAL={
+  "Persa":{
+    foraneos:["Gregorio Licona San Juan","Leticia Lopez Hernandez","Isabel Lopez Jimenez","Ana Gabriela Perez Santiz","Juan Antonio Jimenez Morales","Damian Ulises Sanchez Cruz","Erika Santiz Lopez","Juan Bautista Hernandez","Jeronimo Hernandez Osorio","Juan Torres Mendez","Juan Xochimilco Zoyaquila","Juana Antonia Perez Garcia","Teresa Perez Guzman","Brenda Lucia Lorenzo Guzman","Juan Carlos Ruiz Perez","Jair Perez Hernandez","Maria Magdalena Mendez Luna","Samuel Hernandez Aguilar","Fabian Espinoza Lopez","Guillermo Roman Martinez"],
+    locales:["Jeremias Perez Sanchez","Gerardo Luna Garay","Angel Pelaez Martinez","Jose Gomez Guzman","Ricardo Guzman Gomez","Licci Magaly Diaz Salazar","Karina Francisco Garcia","Luis Abraham Alonso Ruiz","Alma Carolina Martinez Hernandez","Pablo Jimenez Sanchez","Jeronimo Gomez Diaz","Leonardo Gomez Guzman","Stanislao Perez Gomez"]
+  },
+  "Europeo":{
+    foraneos:["Mateo Santiz Gomez","Enoc Santiz Gomez","Abel Guzman Lorenzo","Esther Santiz Gomez","Araceli Santiz Gomez","Lidia Morales Moreno","Samuel Santiz Gomez","Bacilia Lopez Encino","Juan de Dios Hernandez Hernandez","Victor Manuel Guzman Jimenez","Jesus Domingo Lopez Garcia","Mario Ezequiel Santiz Morales","Alexander Giovanni Santiz Morales","Jose Amilcar Guzman Jimenez","Juan Ramon Lopez Gomez","Elsy Nayeli Santiz Gomez","Brenda Lizeth Morales Miranda","Roberto Antonio Antonio","Francisca Hernandez Gonzalez","Camilo Jimenez Morales","Bruno Marioni Encino Lopez","Jose Alberto Aguilar Perez","Jose Antonio Gomez Jimenez"],
+    locales:["Fabian Hernandez Torres","Rodolfo Rodriguez Hernandez","Ana Cristina Torres Flores"]
+  },
+  "Embolsado Persa":{
+    foraneos:["Silvestri Santiago Franco","Teodoro Roman Martinez","Mario Hernandez Hernandez","Wilber Antonio Perez Guzman","Guadalupe del Carmen Guzman Aguilar","Berta Guzman Aguilar","Marvin Versael Perez Aguilar","Carlos Aguilar Perez","Johnny Perez Hernandez","Leonel Santiz Lopez","Jose Alfredo Cruz Hernandez","Joselin Juliana Hernandez Ramirez","Julio Hernandez Gomez","Jose Margarito Aguilar Santiz","Juan Carlos Moreno Moreno","Otoniel Cruz Melo"],
+    locales:["Tiodoro Martinez Ledesma","Luis Manuel Gonzalez Ledesma","Esmeralda Gallegos Lopez","Andres Luna Morales","Alexis Antonio Lopez Luque","Yuricelda Vargas Hernandez"]
+  },
+  "Morron":{
+    foraneos:["Jose Eliver Moreno Jimenez","Omar Gomez Moreno","Angelica Calixto Perez","Angelica Guzman Martinez","Wilber Rodriguez Hernandez","Mateo Hernandez Rodriguez","Pedro Jeremias Rodriguez Moreno","Nicodemo Lopez Encino","Juan Carlos Jimenez Gomez","Angel Gabriel Moreno Jimenez","Efrain Moreno Moreno","Sergio Neptali Aguilar Santiz","Marcos Moreno Jimenez","Jose Ramon Aguilar Hernandez","Floriberto Aguilar Jimenez","Jose Emiliano Santiz Jimenez","Hector Gomez Moreno","Erlin Gamaliel Hernandez Gomez","Maria Soledad Aguilar Perez","Adolfo Angel Aguilar Hernandez","Imelda Lopez Hernandez","Carlos Lopez Perez","Daniel Arturo Vazquez Hernandez","Felipe de Jesus Lopez Hernandez","Alexis Aguilar"],
+    locales:["Maria Teresa Vazquez Martinez","Juana Vazquez Martinez","Francisca Martinez Marin","Paulina Garcia Garcia","Gladys Zulema Berrelleza Garcia","Isidra Martinez Rodriguez"]
+  },
+  "Calidad":{
+    foraneos:["Ami Dayana Jimenez Feliciano","Jose Guadalupe Perez Fernandez","Edgar Hernandez Espinoza","Jose Angel Morales Hernandez","Juan Diego Hernandez Morales"],
+    locales:["Silvestre Lopez Perez"]
+  },
+  "Trazabilidad":{
+    foraneos:["Hector Bautista Hernandez","Griselda Mireya Guzman Sanchez","Eliver Hernandez Alvarez","Jacqueline Aguilar Guzman"],
+    locales:["Cristo Fernando Matamoros Rodriguez","Miguel Neftali Hernandez Eliserio"]
+  },
+  "Carton":{
+    foraneos:["Rafael Sanchez Aguilar","Carlos Aguilar Guzman","Rocalin Sanchez Guzman","Daniel de Jesus Aguilar Hernandez","Juan Manuel Santiz Gomez"],
+    locales:["Agustin Alberto Sepulveda Martinez"]
+  },
+  "Descarga Fruta":{foraneos:[],locales:["Edgar Alonso Gutierrez"]},
+  "Descarga Materiales":{foraneos:["Manuel Feliciano de la Loma"],locales:[]},
+  "Embarques":{foraneos:[],locales:["Bernabe Flores Salazar"]},
+  "Mantenimiento":{foraneos:[],locales:["Julio Lopez Ramos","Eduardo Alejandro Alpuche","Tomas Fabian Mendez Hernandez"]},
+  "Apuntadora":{foraneos:[],locales:["Carol Azuri Sul Rendon"]},
+  "Auxiliar General":{foraneos:[],locales:["Getsemani Gonzalez Carreon"]},
+  "Slicer":{foraneos:[],locales:[]},
+  "Minibel":{foraneos:[],locales:[]},
+  "Reciba":{foraneos:[],locales:[]}
+};
+
+function nv(v){var x=parseFloat(v);return isNaN(x)?0:x;}
+function fmt(n){return "$"+n.toFixed(2);}
+function fechaHoy(){return new Date().toLocaleDateString("es-MX",{day:"2-digit",month:"2-digit",year:"numeric"});}
+
+async function fbGet(url){try{var r=await fetch(url);return r.ok?await r.json():null;}catch(e){return null;}}
+async function fbSet(url,v){try{await fetch(url,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(v)});}catch(e){}}
+
+function App(){
+  var s1=useState("menu"); var vista=s1[0]; var setVista=s1[1];
+  var s2=useState(null); var areaActual=s2[0]; var setAreaActual=s2[1];
+  var s3=useState(PLANTILLA_INICIAL); var plantilla=s3[0]; var setPlantilla=s3[1];
+  var s4=useState({}); var registros=s4[0]; var setRegistros=s4[1];
+  var s5=useState(fechaHoy()); var fecha=s5[0]; var setFecha=s5[1];
+  var s6=useState(PRECIO_DEFAULT); var precio=s6[0]; var setPrecio=s6[1];
+  var s7=useState(false); var editPrecio=s7[0]; var setEditPrecio=s7[1];
+  var s8=useState(false); var mob=s8[0]; var setMob=s8[1];
+  var s9=useState(false); var modoEdPlant=s9[0]; var setModoEdPlant=s9[1];
+  var s10=useState(""); var nuevoNombre=s10[0]; var setNuevoNombre=s10[1];
+  var s11=useState("foraneo"); var nuevoTipo=s11[0]; var setNuevoTipo=s11[1];
+  var s12=useState(null); var filtroArea=s12[0]; var setFiltroArea=s12[1];
+    var s_showExtra=useState(false); var showExtra=s_showExtra[0]; var setShowExtra=s_showExtra[1];
+    var s_extraNombre=useState(""); var extraNombre=s_extraNombre[0]; var setExtraNombre=s_extraNombre[1];
+    var s_extraTipo=useState("foraneo"); var extraTipo=s_extraTipo[0]; var setExtraTipo=s_extraTipo[1];
+    var s_extraArea=useState(""); var extraArea=s_extraArea[0]; var setExtraArea=s_extraArea[1];
+    var s_extraHoras=useState(1); var extraHoras=s_extraHoras[0]; var setExtraHoras=s_extraHoras[1];
+    var s_moverModal=useState(null); var moverModal=s_moverModal[0]; var setMoverModal=s_moverModal[1];
+    var s_moverDest=useState(""); var moverDest=s_moverDest[0]; var setMoverDest=s_moverDest[1];
+    var s_moverTipoDest=useState("foraneo"); var moverTipoDest=s_moverTipoDest[0]; var setMoverTipoDest=s_moverTipoDest[1];
+
+  useEffect(function(){
+    function resize(){setMob(window.innerWidth<768);}
+    resize();window.addEventListener("resize",resize);
+    return function(){window.removeEventListener("resize",resize);};
+  },[]);
+
+  useEffect(function(){
+    setCargando(true);
+    Promise.all([fbGet(FB_PLANT),fbGet(FB_REG)]).then(function(results){
+      if(results[0]&&typeof results[0]==="object")setPlantilla(results[0]);
+      if(results[1]&&typeof results[1]==="object")setRegistros(results[1]);
+      setCargando(false);
+    });
+  },[]);
+
+  function savPlant(v){setPlantilla(v);fbSet(FB_PLANT,v);}
+  function savReg(v){setRegistros(v);fbSet(FB_REG,v);}
+
+  // Obtener todos los trabajadores del area (foraneos + locales)
+  function trabajadoresDeArea(area){
+    var p=plantilla[area]||{foraneos:[],locales:[]};
+    var lista=[];
+    (p.foraneos||[]).forEach(function(n){lista.push({nombre:n,tipo:"foraneo"});});
+    (p.locales||[]).forEach(function(n){lista.push({nombre:n,tipo:"local"});});
+    return lista;
+  }
+
+  // Key para registros: fecha|area
+  function keyReg(f,a){return f+"|"+a;}
+
+  // Obtener registros del area en la fecha
+  function regsDeArea(f,a){
+    var k=keyReg(f,a);
+    return registros[k]||[];
+  }
+
+  // Registros del dia agrupados por area de cargo
+  var todasAreas=Object.keys(plantilla);
+  var regsHoy={};
+  todasAreas.forEach(function(a){
+    var r=regsDeArea(fecha,a);
+    if(r.length>0)regsHoy[a]=r;
+  });
+  var totalHorasHoy=Object.values(regsHoy).reduce(function(s,regs){return s+regs.reduce(function(ss,r){return ss+r.horas;},0);},0);
+  var totalCostoHoy=totalHorasHoy*precio;
+
+  var INP={width:"100%",background:"rgba(0,0,0,0.4)",border:"2px solid rgba(255,255,255,0.12)",borderRadius:8,padding:"11px",color:"#f0f0e8",fontFamily:"system-ui",fontSize:16,fontWeight:700,outline:"none"};
+  var LBL={fontSize:11,color:"#9ca3af",fontWeight:800,textTransform:"uppercase",letterSpacing:1.2,marginBottom:5,display:"block"};
+
+  // -- MENU PRINCIPAL --
+  if(vista==="menu"){
+    return(
+      <div style={{background:"#080f14",minHeight:"100vh"}}>
+        <div style={{background:"rgba(0,0,0,0.85)",borderBottom:"2px solid rgba(251,191,36,0.25)",padding:"0 20px",display:"flex",alignItems:"center",height:62,position:"sticky",top:0,zIndex:50}} className="no-print">
+          <div style={{fontSize:20,fontWeight:900,color:COL,letterSpacing:2,flex:1}}>HORAS EXTRA</div>
+          <button onClick={function(){setVista("resumen");}} style={{padding:"8px 16px",background:"rgba(251,191,36,0.15)",border:"2px solid rgba(251,191,36,0.3)",borderRadius:9,color:COL,fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"system-ui"}}>
+            Ver resumen
+          </button>
+        </div>
+
+        <div style={{maxWidth:900,margin:"0 auto",padding:"20px 16px 80px"}}>
+          {/* Fecha y precio */}
+          <div style={{background:"rgba(255,255,255,0.04)",border:"2px solid rgba(255,255,255,0.09)",borderRadius:12,padding:"16px",marginBottom:20,display:"flex",flexWrap:"wrap",gap:16,alignItems:"center"}}>
+            <div style={{flex:1,minWidth:180}}>
+              <label style={LBL}>Fecha de reporte</label>
+              <input style={INP} value={fecha} onChange={function(e){setFecha(e.target.value);}}/>
+            </div>
+            <div>
+              <label style={LBL}>Precio / hora extra</label>
+              {editPrecio
+                ? <div style={{display:"flex",gap:8}}>
+                    <input type="number" style={Object.assign({},INP,{maxWidth:120,color:COL})} value={precio} onChange={function(e){setPrecio(nv(e.target.value));}}/>
+                    <button onClick={function(){setEditPrecio(false);}} style={{padding:"10px 16px",background:"rgba(251,191,36,0.15)",border:"2px solid rgba(251,191,36,0.4)",borderRadius:8,color:COL,fontWeight:900,cursor:"pointer",fontFamily:"system-ui"}}>OK</button>
+                  </div>
+                : <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <div style={{fontSize:22,fontWeight:900,color:COL,fontFamily:"Georgia,serif"}}>{fmt(precio)}/hr</div>
+                    <button onClick={function(){setEditPrecio(true);}} style={{padding:"6px 12px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:7,color:"#9ca3af",fontSize:12,cursor:"pointer",fontFamily:"system-ui"}}>Editar</button>
+                  </div>
+              }
+            </div>
+          </div>
+
+          {/* Resumen hoy */}
+          {totalHorasHoy>0&&(
+            <div style={{background:"rgba(251,191,36,0.08)",border:"2px solid rgba(251,191,36,0.3)",borderRadius:12,padding:"14px 18px",marginBottom:20,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div>
+                <div style={{fontSize:12,color:"#9ca3af",fontWeight:800}}>REGISTRADO HOY</div>
+                <div style={{fontSize:13,color:"#6b7280",marginTop:2}}>{Object.keys(regsHoy).length} areas . {Object.values(regsHoy).reduce(function(s,r){return s+r.length;},0)} registros</div>
+              </div>
+              <div style={{textAlign:"right"}}>
+                <div style={{fontSize:28,fontWeight:900,color:COL,fontFamily:"Georgia,serif"}}>{totalHorasHoy} hrs</div>
+                <div style={{fontSize:16,fontWeight:700,color:"#9ca3af"}}>{fmt(totalCostoHoy)}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Areas */}
+          <div style={{fontSize:11,fontWeight:900,color:"#4a6a7a",textTransform:"uppercase",letterSpacing:2,marginBottom:12}}>Selecciona area para registrar extras</div>
+          <div style={{display:"grid",gridTemplateColumns:mob?"repeat(2,1fr)":"repeat(3,1fr)",gap:10,marginBottom:24}}>
+            {todasAreas.map(function(a){
+              var regs=regsDeArea(fecha,a);
+              var totH=regs.reduce(function(s,r){return s+r.horas;},0);
+              var trab=trabajadoresDeArea(a);
+              var hasData=regs.length>0;
+              return(
+                <button key={a} onClick={function(){setAreaActual(a);setVista("captura");}}
+                  style={{padding:"14px 12px",background:hasData?"rgba(251,191,36,0.1)":"rgba(255,255,255,0.04)",border:"2px solid "+(hasData?"rgba(251,191,36,0.4)":"rgba(255,255,255,0.08)"),borderRadius:11,cursor:"pointer",fontFamily:"system-ui",textAlign:"left"}}>
+                  <div style={{fontSize:15,fontWeight:900,color:hasData?COL:"#9ca3af",marginBottom:hasData?4:0}}>{a}</div>
+                  {hasData&&<div style={{fontSize:12,color:"#6b7280"}}>{regs.length} registros . {totH} hrs</div>}
+                  {!hasData&&<div style={{fontSize:11,color:"#4a6a7a"}}>{trab.length} en plantilla</div>}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Editar plantilla */}
+          <button onClick={function(){setVista("plantilla");}}
+            style={{width:"100%",padding:"13px",background:"rgba(255,255,255,0.04)",border:"2px solid rgba(255,255,255,0.1)",borderRadius:11,fontSize:15,fontWeight:800,color:"#6b7280",cursor:"pointer",fontFamily:"system-ui"}}>
+            Editar plantilla de personal
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // -- CAPTURA POR AREA --
+  if(vista==="captura"&&areaActual){
+    var trab=trabajadoresDeArea(areaActual);
+    var regsArea=regsDeArea(fecha,areaActual);
+    var registrados=regsArea.map(function(r){return r.nombre;});
+
+    function toggleTrabajador(nombre,tipo){
+      var yaRegistrado=regsArea.find(function(r){return r.nombre===nombre&&!r.areaExtra;});
+      var k=keyReg(fecha,areaActual);
+      var nuevoRegs=Object.assign({},registros);
+      if(yaRegistrado){
+        nuevoRegs[k]=(nuevoRegs[k]||[]).filter(function(r){return !(r.nombre===nombre&&!r.areaExtra);});
+      } else {
+        nuevoRegs[k]=(nuevoRegs[k]||[]).concat([{id:Date.now()+"_"+nombre,nombre:nombre,tipo:tipo,horas:1,areaExtra:null,areaOrigen:areaActual}]);
+      }
+      if((nuevoRegs[k]||[]).length===0)delete nuevoRegs[k];
+      savReg(nuevoRegs);
+    }
+
+    function seleccionarTodos(){
+      var k=keyReg(fecha,areaActual);
+      var nuevoRegs=Object.assign({},registros);
+      var extras=((nuevoRegs[k]||[]).filter(function(r){return r.areaExtra;}));
+      nuevoRegs[k]=extras.concat(trab.map(function(t){return{id:Date.now()+"_"+t.nombre,nombre:t.nombre,tipo:t.tipo,horas:1,areaExtra:null,areaOrigen:areaActual};}));
+      savReg(nuevoRegs);
+    }
+
+    function deseleccionarTodos(){
+      var k=keyReg(fecha,areaActual);
+      var nuevoRegs=Object.assign({},registros);
+      nuevoRegs[k]=(nuevoRegs[k]||[]).filter(function(r){return r.areaExtra;});
+      if((nuevoRegs[k]||[]).length===0)delete nuevoRegs[k];
+      savReg(nuevoRegs);
+    }
+
+    function setHoras(id,horas,areaCargo){
+      var k=keyReg(fecha,areaCargo||areaActual);
+      var nuevoRegs=Object.assign({},registros);
+      nuevoRegs[k]=(nuevoRegs[k]||[]).map(function(r){return r.id===id?Object.assign({},r,{horas:horas}):r;});
+      savReg(nuevoRegs);
+    }
+
+    function aplicarHorasATodos(horas){
+      var k=keyReg(fecha,areaActual);
+      var nuevoRegs=Object.assign({},registros);
+      nuevoRegs[k]=(nuevoRegs[k]||[]).map(function(r){return r.areaExtra?r:Object.assign({},r,{horas:horas});});
+      savReg(nuevoRegs);
+    }
+
+    function agregarExtra(nombre,tipo,areaCargoExtra,horas){
+      var k=keyReg(fecha,areaCargoExtra);
+      var nuevoRegs=Object.assign({},registros);
+      nuevoRegs[k]=(nuevoRegs[k]||[]).concat([{id:Date.now()+"_extra_"+nombre,nombre:nombre,tipo:tipo,horas:horas,areaExtra:areaCargoExtra,areaOrigen:areaActual}]);
+      savReg(nuevoRegs);
+    }
+
+    function quitarRegistro(id,areaCargo){
+      var k=keyReg(fecha,areaCargo||areaActual);
+      var nuevoRegs=Object.assign({},registros);
+      nuevoRegs[k]=(nuevoRegs[k]||[]).filter(function(r){return r.id!==id;});
+      if((nuevoRegs[k]||[]).length===0)delete nuevoRegs[k];
+      savReg(nuevoRegs);
+    }
+
+    var registradosBase=regsArea.filter(function(r){return !r.areaExtra;});
+    var todosSeleccionados=trab.length>0&&trab.every(function(t){return regsArea.find(function(r){return r.nombre===t.nombre&&!r.areaExtra;});});
+    var totalHrsArea=regsArea.reduce(function(s,r){return s+r.horas;},0);
+
+    // Para extras de esta area cargadas a otras areas
+    var extrasEnOtrasAreas=[];
+    Object.keys(registros).forEach(function(k){
+      if(!k.startsWith(fecha+"|"))return;
+      var areaCargo=k.split("|")[1];
+      if(areaCargo===areaActual)return;
+      (registros[k]||[]).forEach(function(r){
+        if(r.areaOrigen===areaActual&&r.areaExtra){
+          extrasEnOtrasAreas.push(Object.assign({},r,{areaCargo:areaCargo}));
+        }
+      });
+    });
+
+    return(
+      <div style={{background:"#080f14",minHeight:"100vh"}}>
+        <div style={{background:"rgba(0,0,0,0.85)",borderBottom:"2px solid rgba(251,191,36,0.25)",padding:"0 16px",display:"flex",alignItems:"center",height:62,position:"sticky",top:0,zIndex:50}} className="no-print">
+          <button onClick={function(){setVista("menu");}} style={{marginRight:14,padding:"8px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,color:"#9ca3af",fontSize:14,cursor:"pointer",fontFamily:"system-ui"}}>Volver</button>
+          <div style={{fontSize:18,fontWeight:900,color:COL,flex:1}}>{areaActual}</div>
+          <div style={{fontSize:13,color:"#6b7280"}}>{fecha}</div>
+        </div>
+
+        <div style={{maxWidth:700,margin:"0 auto",padding:"18px 14px 80px"}}>
+
+          {/* Controles rapidos */}
+          <div style={{background:"rgba(255,255,255,0.04)",border:"2px solid rgba(255,255,255,0.09)",borderRadius:12,padding:"14px",marginBottom:16}}>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:12}}>
+              <button onClick={seleccionarTodos} style={{padding:"9px 16px",background:"rgba(251,191,36,0.15)",border:"2px solid rgba(251,191,36,0.3)",borderRadius:9,color:COL,fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"system-ui"}}>
+                Seleccionar todos
+              </button>
+              <button onClick={deseleccionarTodos} style={{padding:"9px 16px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:9,color:"#9ca3af",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"system-ui"}}>
+                Quitar todos
+              </button>
+            </div>
+            {registradosBase.length>0&&(
+              <div>
+                <div style={{fontSize:11,color:"#6b7280",marginBottom:6}}>APLICAR MISMO HORARIO A TODOS LOS SELECCIONADOS</div>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                  {[0.5,1,1.5,2,2.5,3,3.5,4,5,6].map(function(h){
+                    return(
+                      <button key={h} onClick={function(){aplicarHorasATodos(h);}}
+                        style={{padding:"8px 14px",border:"2px solid rgba(255,255,255,0.1)",borderRadius:8,background:"rgba(255,255,255,0.05)",color:"#f0f0e8",fontWeight:700,cursor:"pointer",fontFamily:"system-ui",fontSize:15}}>
+                        {h}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Lista de trabajadores */}
+          <div style={{background:"rgba(255,255,255,0.04)",border:"2px solid rgba(255,255,255,0.09)",borderRadius:12,padding:"14px",marginBottom:16}}>
+            <div style={{fontSize:13,fontWeight:900,color:"#f0f0e8",marginBottom:12}}>Plantilla  -  {areaActual} ({trab.length} personas)</div>
+            {trab.map(function(t){
+              var reg=regsArea.find(function(r){return r.nombre===t.nombre&&!r.areaExtra;});
+              var activo=!!reg;
+              return(
+                <div key={t.nombre} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
+                  <button onClick={function(){toggleTrabajador(t.nombre,t.tipo);}}
+                    style={{width:28,height:28,borderRadius:6,border:"2px solid "+(activo?"rgba(251,191,36,0.6)":"rgba(255,255,255,0.2)"),background:activo?"rgba(251,191,36,0.2)":"transparent",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",color:activo?COL:"transparent",fontSize:16,fontWeight:900}}>
+                    {activo?"v":""}
+                  </button>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:15,fontWeight:activo?800:600,color:activo?"#f0f0e8":"#6b7280"}}>{t.nombre}</div>
+                    <div style={{fontSize:11,color:t.tipo==="local"?"#4ade80":"#60a5fa"}}>{t.tipo}</div>
+                  </div>
+                  {activo&&(
+                    <div style={{display:"flex",gap:4,alignItems:"center"}}>
+                      <div style={{fontSize:11,color:"#6b7280"}}>hrs:</div>
+                      <div style={{display:"flex",gap:3}}>
+                        {[0.5,1,1.5,2,2.5,3,3.5,4,5,6].map(function(h){
+                          return(
+                            <button key={h} onClick={function(){setHoras(reg.id,h,areaActual);}}
+                              style={{padding:"5px 8px",border:"1px solid "+(reg.horas===h?"rgba(251,191,36,0.6)":"rgba(255,255,255,0.1)"),borderRadius:6,background:reg.horas===h?"rgba(251,191,36,0.2)":"transparent",color:reg.horas===h?COL:"#6b7280",fontWeight:700,cursor:"pointer",fontFamily:"system-ui",fontSize:13}}>
+                              {h}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Horas cargadas a otra area */}
+          <div style={{background:"rgba(96,165,250,0.06)",border:"2px solid rgba(96,165,250,0.25)",borderRadius:12,padding:"14px",marginBottom:16}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+              <div style={{fontSize:13,fontWeight:900,color:"#60a5fa"}}>Horas cargadas a otra area</div>
+              <button onClick={function(){setShowExtra(true);setExtraNombre("");setExtraArea("");setExtraHoras(1);}}
+                style={{padding:"7px 14px",background:"rgba(96,165,250,0.15)",border:"2px solid rgba(96,165,250,0.3)",borderRadius:8,color:"#60a5fa",fontSize:13,fontWeight:800,cursor:"pointer",fontFamily:"system-ui"}}>
+                + Agregar
+              </button>
+            </div>
+            {extrasEnOtrasAreas.length===0
+              ? <div style={{fontSize:13,color:"#4a6a7a",textAlign:"center",padding:"10px 0"}}>Sin horas cargadas a otras areas</div>
+              : extrasEnOtrasAreas.map(function(r){
+                return(
+                  <div key={r.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:14,fontWeight:700,color:"#f0f0e8"}}>{r.nombre}</div>
+                      <div style={{fontSize:11,color:"#60a5fa"}}>Cargado a: {r.areaCargo}</div>
+                    </div>
+                    <div style={{fontSize:20,fontWeight:900,color:"#60a5fa",fontFamily:"Georgia,serif"}}>{r.horas} hrs</div>
+                    <button onClick={function(){quitarRegistro(r.id,r.areaCargo);}}
+                      style={{padding:"5px 10px",background:"transparent",border:"1px solid rgba(248,113,113,0.3)",borderRadius:6,color:"#f87171",fontSize:12,cursor:"pointer",fontFamily:"system-ui"}}>
+                      X
+                    </button>
+                  </div>
+                );
+              })
+            }
+          </div>
+
+          {/* Total */}
+          {totalHrsArea>0&&(
+            <div style={{background:"rgba(251,191,36,0.1)",border:"2px solid rgba(251,191,36,0.4)",borderRadius:12,padding:"14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div style={{fontSize:15,fontWeight:800,color:COL}}>Total {areaActual}</div>
+              <div style={{textAlign:"right"}}>
+                <div style={{fontSize:26,fontWeight:900,color:COL,fontFamily:"Georgia,serif"}}>{totalHrsArea} hrs</div>
+                <div style={{fontSize:14,color:"#9ca3af"}}>{fmt(totalHrsArea*precio)}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal agregar extra a otra area */}
+          {showExtra&&(
+            <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.9)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+              <div style={{background:"#080f14",border:"2px solid rgba(96,165,250,0.4)",borderRadius:14,padding:"24px",maxWidth:400,width:"100%"}}>
+                <div style={{fontSize:16,fontWeight:900,color:"#60a5fa",marginBottom:20}}>Horas cargadas a otra area</div>
+                <div style={{marginBottom:14}}>
+                  <label style={LBL}>Trabajador (de {areaActual})</label>
+                  <select style={INP} value={extraNombre} onChange={function(e){
+                    setExtraNombre(e.target.value);
+                    var t2=trabajadoresDeArea(areaActual).find(function(t){return t.nombre===e.target.value;});
+                    if(t2)setExtraTipo(t2.tipo);
+                  }}>
+                    <option value="">-- Seleccionar --</option>
+                    {trabajadoresDeArea(areaActual).map(function(t){return <option key={t.nombre} value={t.nombre}>{t.nombre}</option>;})}
+                  </select>
+                </div>
+                <div style={{marginBottom:14}}>
+                  <label style={LBL}>Area donde se cargan las horas</label>
+                  <select style={INP} value={extraArea} onChange={function(e){setExtraArea(e.target.value);}}>
+                    <option value="">-- Seleccionar area --</option>
+                    {todasAreas.filter(function(a){return a!==areaActual;}).map(function(a){return <option key={a} value={a}>{a}</option>;})}
+                  </select>
+                </div>
+                <div style={{marginBottom:20}}>
+                  <label style={LBL}>Horas</label>
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                    {[0.5,1,1.5,2,2.5,3,3.5,4].map(function(h){
+                      return(
+                        <button key={h} onClick={function(){setExtraHoras(h);}}
+                          style={{padding:"9px 14px",border:"2px solid "+(extraHoras===h?"rgba(96,165,250,0.6)":"rgba(255,255,255,0.1)"),borderRadius:8,background:extraHoras===h?"rgba(96,165,250,0.2)":"transparent",color:extraHoras===h?"#60a5fa":"#6b7280",fontWeight:700,cursor:"pointer",fontFamily:"system-ui",fontSize:15}}>
+                          {h}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div style={{display:"flex",gap:10}}>
+                  <button onClick={function(){setShowExtra(false);}} style={{flex:1,padding:"12px",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:9,color:"#6b7280",fontWeight:700,cursor:"pointer",fontFamily:"system-ui"}}>Cancelar</button>
+                  <button onClick={function(){
+                    if(extraNombre&&extraArea){
+                      agregarExtra(extraNombre,extraTipo,extraArea,extraHoras);
+                      setShowExtra(false);
+                    }
+                  }} disabled={!extraNombre||!extraArea}
+                    style={{flex:2,padding:"12px",background:extraNombre&&extraArea?"rgba(96,165,250,0.2)":"rgba(255,255,255,0.04)",border:"2px solid "+(extraNombre&&extraArea?"rgba(96,165,250,0.4)":"rgba(255,255,255,0.1)"),borderRadius:9,color:extraNombre&&extraArea?"#60a5fa":"#374151",fontWeight:900,cursor:extraNombre&&extraArea?"pointer":"default",fontFamily:"system-ui"}}>
+                    Guardar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // -- EDITAR PLANTILLA --
+  if(vista==="plantilla"){
+    var areaEditar=areaActual||todasAreas[0];
+    var plantArea=plantilla[areaEditar]||{foraneos:[],locales:[]};
+    function borrarDeArea(nombre,tipo){
+      var p=Object.assign({},plantilla);
+      p[areaEditar]=Object.assign({},p[areaEditar]);
+      p[areaEditar][tipo]=(p[areaEditar][tipo]||[]).filter(function(n){return n!==nombre;});
+      savPlant(p);
+    }
+    function moverDeArea(nombre,tipoActual,areaDestino,tipoDestino){
+      var p=JSON.parse(JSON.stringify(plantilla));
+      p[areaEditar][tipoActual]=(p[areaEditar][tipoActual]||[]).filter(function(n){return n!==nombre;});
+      p[areaDestino]=p[areaDestino]||{foraneos:[],locales:[]};
+      if(!(p[areaDestino][tipoDestino]||[]).includes(nombre))p[areaDestino][tipoDestino]=(p[areaDestino][tipoDestino]||[]).concat([nombre]);
+      savPlant(p);
+    }
+    function agregarAPlantilla(){
+      if(!nuevoNombre.trim())return;
+      var p=JSON.parse(JSON.stringify(plantilla));
+      p[areaEditar]=p[areaEditar]||{foraneos:[],locales:[]};
+      var lista=nuevoTipo==="local"?"locales":"foraneos";
+      if(!(p[areaEditar][lista]||[]).includes(nuevoNombre.trim()))p[areaEditar][lista]=(p[areaEditar][lista]||[]).concat([nuevoNombre.trim()]);
+      savPlant(p);
+      setNuevoNombre("");
+    }
+
+    return(
+      <div style={{background:"#080f14",minHeight:"100vh"}}>
+        <div style={{background:"rgba(0,0,0,0.85)",borderBottom:"2px solid rgba(251,191,36,0.25)",padding:"0 16px",display:"flex",alignItems:"center",height:62,position:"sticky",top:0,zIndex:50}}>
+          <button onClick={function(){setVista("menu");setAreaActual(null);}} style={{marginRight:14,padding:"8px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,color:"#9ca3af",fontSize:14,cursor:"pointer",fontFamily:"system-ui"}}>Volver</button>
+          <div style={{fontSize:18,fontWeight:900,color:COL,flex:1}}>Plantilla de personal</div>
+        </div>
+
+        <div style={{maxWidth:700,margin:"0 auto",padding:"18px 14px 80px"}}>
+          {/* Selector de area */}
+          <div style={{marginBottom:16}}>
+            <label style={LBL}>Area</label>
+            <select style={INP} value={areaEditar} onChange={function(e){setAreaActual(e.target.value);}}>
+              {todasAreas.map(function(a){return <option key={a} value={a}>{a}</option>;})}
+            </select>
+          </div>
+
+          {/* Agregar persona */}
+          <div style={{background:"rgba(251,191,36,0.06)",border:"2px solid rgba(251,191,36,0.2)",borderRadius:12,padding:"14px",marginBottom:16}}>
+            <div style={{fontSize:13,fontWeight:900,color:COL,marginBottom:12}}>Agregar persona a {areaEditar}</div>
+            <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:10}}>
+              <input style={Object.assign({},INP,{flex:1,minWidth:200})} placeholder="Nombre completo" value={nuevoNombre}
+                onChange={function(e){setNuevoNombre(e.target.value);}}
+                onKeyDown={function(e){if(e.key==="Enter")agregarAPlantilla();}}/>
+              <select style={Object.assign({},INP,{maxWidth:140})} value={nuevoTipo} onChange={function(e){setNuevoTipo(e.target.value);}}>
+                <option value="foraneo">Foraneo</option>
+                <option value="local">Local</option>
+              </select>
+            </div>
+            <button onClick={agregarAPlantilla} disabled={!nuevoNombre.trim()}
+              style={{padding:"10px 20px",background:nuevoNombre.trim()?"rgba(251,191,36,0.2)":"rgba(255,255,255,0.04)",border:"2px solid "+(nuevoNombre.trim()?"rgba(251,191,36,0.4)":"rgba(255,255,255,0.1)"),borderRadius:9,color:nuevoNombre.trim()?COL:"#374151",fontWeight:900,cursor:nuevoNombre.trim()?"pointer":"default",fontFamily:"system-ui"}}>
+              Agregar
+            </button>
+          </div>
+
+          {/* Lista de la plantilla */}
+          {["locales","foraneos"].map(function(tipo){
+            var lista=plantArea[tipo]||[];
+            var label=tipo==="locales"?"Locales":"Foraneos";
+            var color=tipo==="locales"?"#4ade80":"#60a5fa";
+            if(!lista.length)return null;
+            return(
+              <div key={tipo} style={{background:"rgba(255,255,255,0.04)",border:"2px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"14px",marginBottom:12}}>
+                <div style={{fontSize:13,fontWeight:900,color:color,marginBottom:10}}>{label} ({lista.length})</div>
+                {lista.map(function(nombre){
+                  return(
+                    <div key={nombre} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 0",borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
+                      <div style={{flex:1,fontSize:15,fontWeight:700,color:"#f0f0e8"}}>{nombre}</div>
+                      <button onClick={function(){setMoverModal({nombre:nombre,tipo:tipo});setMoverDest("");setMoverTipoDest("foraneo");}}
+                        style={{padding:"5px 10px",background:"rgba(251,191,36,0.1)",border:"1px solid rgba(251,191,36,0.3)",borderRadius:6,color:COL,fontSize:12,cursor:"pointer",fontFamily:"system-ui"}}>
+                        Mover
+                      </button>
+                      <button onClick={function(){if(window.confirm("Borrar a "+nombre+" de "+areaEditar+"?"))borrarDeArea(nombre,tipo);}}
+                        style={{padding:"5px 10px",background:"rgba(248,113,113,0.1)",border:"1px solid rgba(248,113,113,0.3)",borderRadius:6,color:"#f87171",fontSize:12,cursor:"pointer",fontFamily:"system-ui"}}>
+                        Borrar
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Modal mover */}
+        {moverModal&&(
+          <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.9)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+            <div style={{background:"#080f14",border:"2px solid rgba(251,191,36,0.4)",borderRadius:14,padding:"24px",maxWidth:380,width:"100%"}}>
+              <div style={{fontSize:15,fontWeight:900,color:COL,marginBottom:6}}>Mover persona</div>
+              <div style={{fontSize:13,color:"#9ca3af",marginBottom:20}}>{moverModal.nombre}</div>
+              <div style={{marginBottom:14}}>
+                <label style={LBL}>Area destino</label>
+                <select style={INP} value={moverDest} onChange={function(e){setMoverDest(e.target.value);}}>
+                  <option value="">-- Seleccionar --</option>
+                  {todasAreas.filter(function(a){return a!==areaEditar;}).map(function(a){return <option key={a} value={a}>{a}</option>;})}
+                </select>
+              </div>
+              <div style={{marginBottom:20}}>
+                <label style={LBL}>Tipo en el destino</label>
+                <select style={INP} value={moverTipoDest} onChange={function(e){setMoverTipoDest(e.target.value);}}>
+                  <option value="foraneo">Foraneo</option>
+                  <option value="local">Local</option>
+                </select>
+              </div>
+              <div style={{display:"flex",gap:10}}>
+                <button onClick={function(){setMoverModal(null);}} style={{flex:1,padding:"11px",background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:9,color:"#6b7280",fontWeight:700,cursor:"pointer",fontFamily:"system-ui"}}>Cancelar</button>
+                <button onClick={function(){
+                  if(moverDest){moverDeArea(moverModal.nombre,moverModal.tipo,moverDest,moverTipoDest+"s");setMoverModal(null);}
+                }} disabled={!moverDest}
+                  style={{flex:2,padding:"11px",background:moverDest?"rgba(251,191,36,0.2)":"rgba(255,255,255,0.04)",border:"2px solid "+(moverDest?"rgba(251,191,36,0.4)":"rgba(255,255,255,0.1)"),borderRadius:9,color:moverDest?COL:"#374151",fontWeight:900,cursor:moverDest?"pointer":"default",fontFamily:"system-ui"}}>
+                  Mover
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // -- RESUMEN / APUNTADORA --
+  if(vista==="resumen"){
+    var areasConRegs=Object.keys(registros).filter(function(k){return k.startsWith(fecha+"|");}).map(function(k){
+      var a=k.split("|")[1];
+      var regs=registros[k]||[];
+      return{area:a,regs:regs,horas:regs.reduce(function(s,r){return s+r.horas;},0)};
+    }).filter(function(x){return x.horas>0;});
+
+    var filtradas=filtroArea?areasConRegs.filter(function(x){return x.area===filtroArea;}):areasConRegs;
+    var totHoras=filtradas.reduce(function(s,x){return s+x.horas;},0);
+
+    // Separar por local/foraneo
+    function separarTipo(regs){
+      var locales=regs.filter(function(r){return r.tipo==="local";});
+      var foraneos=regs.filter(function(r){return r.tipo==="foraneo";});
+      return{locales:locales,foraneos:foraneos};
+    }
+
+    return(
+      <div style={{background:"#080f14",minHeight:"100vh"}}>
+        <div style={{background:"rgba(0,0,0,0.85)",borderBottom:"2px solid rgba(251,191,36,0.25)",padding:"0 16px",display:"flex",alignItems:"center",height:62,position:"sticky",top:0,zIndex:50}} className="no-print">
+          <button onClick={function(){setVista("menu");}} style={{marginRight:14,padding:"8px 14px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,color:"#9ca3af",fontSize:14,cursor:"pointer",fontFamily:"system-ui"}}>Volver</button>
+          <div style={{fontSize:18,fontWeight:900,color:COL,flex:1}}>Resumen - {fecha}</div>
+          <button onClick={function(){window.print();}} style={{padding:"9px 18px",background:"linear-gradient(135deg,#78350f,#fbbf24)",border:"none",borderRadius:9,color:"#000",fontSize:14,fontWeight:900,cursor:"pointer",fontFamily:"system-ui"}}>Imprimir</button>
+        </div>
+
+        <div style={{maxWidth:900,margin:"0 auto",padding:"18px 14px 80px"}}>
+          {/* Filtro */}
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}} className="no-print">
+            <button onClick={function(){setFiltroArea(null);}} style={{padding:"7px 14px",border:"2px solid "+(filtroArea===null?COL:"rgba(255,255,255,0.1)"),borderRadius:18,background:filtroArea===null?"rgba(251,191,36,0.15)":"transparent",color:filtroArea===null?COL:"#6b7280",fontFamily:"system-ui",fontSize:12,fontWeight:700,cursor:"pointer"}}>Todas</button>
+            {areasConRegs.map(function(x){var sel=filtroArea===x.area;return(
+              <button key={x.area} onClick={function(){setFiltroArea(x.area);}} style={{padding:"7px 14px",border:"2px solid "+(sel?COL:"rgba(255,255,255,0.1)"),borderRadius:18,background:sel?"rgba(251,191,36,0.15)":"transparent",color:sel?COL:"#6b7280",fontFamily:"system-ui",fontSize:12,fontWeight:700,cursor:"pointer"}}>{x.area}</button>
+            );})}
+          </div>
+
+          {/* Encabezado imprimible */}
+          <div style={{marginBottom:16,paddingBottom:14,borderBottom:"2px solid rgba(255,255,255,0.1)"}}>
+            <div style={{fontSize:22,fontWeight:900,color:COL}}>PARRAS VALLEY - HORAS EXTRA</div>
+            <div style={{fontSize:14,color:"#9ca3af",marginTop:4}}>Fecha: {fecha} . Precio/hora: {fmt(precio)}</div>
+            <div style={{fontSize:14,color:"#9ca3af"}}>Total: {totHoras} horas . {fmt(totHoras*precio)}</div>
+          </div>
+
+          {!filtradas.length
+            ? <div style={{textAlign:"center",padding:60,color:"#4a6a7a",fontSize:16}}>Sin registros para esta fecha</div>
+            : filtradas.map(function(x){
+              var sep=separarTipo(x.regs);
+              return(
+                <div key={x.area} className="print-card" style={{background:"rgba(255,255,255,0.04)",border:"2px solid rgba(251,191,36,0.2)",borderRadius:12,marginBottom:14,overflow:"hidden"}}>
+                  <div style={{background:"rgba(251,191,36,0.1)",borderBottom:"2px solid rgba(251,191,36,0.2)",padding:"11px 18px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <div style={{fontSize:19,fontWeight:900,color:COL}}>{x.area}</div>
+                    <div style={{textAlign:"right"}}>
+                      <div style={{fontSize:11,color:"#9ca3af"}}>{x.regs.length} personas</div>
+                      <div style={{fontSize:20,fontWeight:900,color:COL,fontFamily:"Georgia,serif"}}>{x.horas} hrs . {fmt(x.horas*precio)}</div>
+                    </div>
+                  </div>
+                  <div style={{padding:"12px 18px"}}>
+                    {[{label:"Locales",regs:sep.locales,color:"#4ade80"},{label:"Foraneos",regs:sep.foraneos,color:"#60a5fa"}].map(function(grupo){
+                      if(!grupo.regs.length)return null;
+                      return(
+                        <div key={grupo.label} style={{marginBottom:10}}>
+                          <div style={{fontSize:11,fontWeight:800,color:grupo.color,marginBottom:6,textTransform:"uppercase",letterSpacing:1}}>{grupo.label} ({grupo.regs.length})</div>
+                          <table style={{width:"100%",borderCollapse:"collapse"}}>
+                            <tbody>
+                              {grupo.regs.map(function(r){
+                                return(
+                                  <tr key={r.id} style={{borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
+                                    <td style={{padding:"7px 4px",fontSize:14,fontWeight:700,color:"#f0f0e8"}}>{r.nombre}</td>
+                                    {r.areaExtra&&<td style={{padding:"7px 4px",fontSize:11,color:"#60a5fa",whiteSpace:"nowrap"}}>cargo: {r.areaExtra}</td>}
+                                    <td style={{padding:"7px 4px",textAlign:"right",fontSize:16,fontWeight:900,color:grupo.color,fontFamily:"Georgia,serif",whiteSpace:"nowrap"}}>{r.horas} hrs</td>
+                                    <td style={{padding:"7px 4px",textAlign:"right",fontSize:14,fontWeight:700,color:"#9ca3af",whiteSpace:"nowrap"}}>{fmt(r.horas*precio)}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })
+          }
+
+          {/* Total general */}
+          {filtradas.length>0&&(
+            <div style={{background:"rgba(251,191,36,0.1)",border:"2px solid rgba(251,191,36,0.4)",borderRadius:12,padding:"16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div style={{fontSize:17,fontWeight:900,color:COL}}>TOTAL GENERAL</div>
+              <div style={{textAlign:"right"}}>
+                <div style={{fontSize:13,color:"#9ca3af"}}>{filtradas.reduce(function(s,x){return s+x.regs.length;},0)} personas . {totHoras} horas</div>
+                <div style={{fontSize:30,fontWeight:900,color:COL,fontFamily:"Georgia,serif"}}>{fmt(totHoras*precio)}</div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
